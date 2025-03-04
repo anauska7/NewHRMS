@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:new_hrms/admin/adminDashboard/screen/admindashboard.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,58 +18,66 @@ class _LoginPageState extends State<LoginPage> {
   final FlutterSecureStorage _storage = FlutterSecureStorage();
   bool _isLoading = false;
 
-  Future<void> loginUser() async {
-    setState(() {
-      _isLoading = true;
-    });
+ Future<void> loginUser() async {
+  setState(() {
+    _isLoading = true;
+  });
 
-    String url = 'https://api.neophyte.live/hrms-api/api/auth/login'; // ✅ Replace with correct API URL
-    Map<String, String> headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    };
-    Map<String, dynamic> body = {
-      'email': _emailController.text,
-      'password': _passwordController.text,
-    };
+  String url = 'http://192.168.1.20:5500/api/auth/login';
+  Map<String, String> headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+  Map<String, dynamic> body = {
+    'email': _emailController.text.trim(),
+    'password': _passwordController.text.trim(),
+  };
 
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: jsonEncode(body),
-      );
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: headers,
+      body: jsonEncode(body),
+    );
 
-      final data = jsonDecode(response.body); // Decode response
+    final data = jsonDecode(response.body);
 
-      // ✅ Check if the token exists and is a valid String
-      if (response.statusCode == 200 && data.containsKey('token') && data['token'] != null) {
-        String token = data['token'].toString(); // Ensure it's a String
+    print("Response Code: ${response.statusCode}");
+    print("Response Body: ${response.body}");
 
-        // Store JWT Token securely
-        await _storage.write(key: 'auth_token', value: token);
+    if (response.statusCode == 200 && data.containsKey('token') && data['token'] != null) {
+      String token = data['token'].toString();
 
-        // Navigate to Authenticated Screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AuthenticatedScreen()),
-        );
-      } else {
-        // ✅ Handle case where token is missing or null
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Login failed. Please try again.')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    } finally {
+      await _storage.write(key: 'auth_token', value: token);
+
+      print("Stored JWT Token: $token");
+
       setState(() {
         _isLoading = false;
       });
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(data['message'] ?? 'Login failed. Please try again.')),
+      );
     }
+  } catch (e) {
+    setState(() {
+      _isLoading = false; 
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +91,6 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const SizedBox(height: 40),
 
-              // **Illustration Image** (Remote URL or Local Path)
               Image.network(
                 "https://www.pockethrms.com/wp-content/uploads/2022/01/Happy-Workforce.jpg", // ✅ Replace with actual image URL
                 height: 150,
@@ -99,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 20),
 
-              // **Login Card**
+              // Login Card
               Card(
                 color: const Color.fromARGB(255, 252, 253, 253),
                 shape: RoundedRectangleBorder(
@@ -122,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 20),
 
-                      // **Email Field**
+                      // Email Field
                       const Text(
                         "Email",
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -141,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 15),
 
-                      // **Password Field + Forgot Password**
+                      // Password Field 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -150,9 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              // TODO: Implement forgot password logic
-                            },
+                            onTap: () {},
                             child: const Text(
                               "Forgot Password?",
                               style: TextStyle(
@@ -179,26 +185,26 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 20),
 
-                      // **Login Button**
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : loginUser,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? CircularProgressIndicator(color: Colors.white)
-                              : const Text(
-                                  "Login",
-                                  style: TextStyle(fontSize: 18, color: Colors.white),
-                                ),
+                      // Login Button
+                     SizedBox(
+                     width: double.infinity,
+                     height: 50,
+                     child: ElevatedButton(
+                         onPressed: () {
+                              Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                                );
+                             },   
+                       style: ElevatedButton.styleFrom(
+                       backgroundColor: Colors.green,
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                           ),
+                      child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
+                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -206,7 +212,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 30),
 
-              // **Footer Section**
+              // Footer Section
               Column(
                 children: [
                   const Text(
@@ -217,14 +223,11 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 10),
 
-                  // **Social Icons**
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        onPressed: () {
-                          // TODO: Add GitHub Link
-                        },
+                        onPressed: () {},
                         icon: SvgPicture.asset(
                           "assets/github.svg",
                           height: 30,
@@ -233,7 +236,6 @@ class _LoginPageState extends State<LoginPage> {
 
                       IconButton(
                         onPressed: () {
-                          // TODO: Add LinkedIn Link
                         },
                         icon: SvgPicture.asset(
                           "assets/linkedin.svg",
@@ -243,7 +245,6 @@ class _LoginPageState extends State<LoginPage> {
 
                       IconButton(
                         onPressed: () {
-                          // TODO: Add DS Link
                         },
                         icon: Image.network(
                           "https://raw.githubusercontent.com/deepak-singh5219/Digital-Portfolio/main/public/favicon.ico", // ✅ Replace with actual DS logo URL
@@ -264,16 +265,4 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/// **✅ Authenticated Screen (Temporary)**
-/// Replace this with your actual dashboard or home screen
-class AuthenticatedScreen extends StatelessWidget {
-  const AuthenticatedScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Welcome')),
-      body: const Center(child: Text('You are logged in! Implement your home screen here.')),
-    );
-  }
-}
