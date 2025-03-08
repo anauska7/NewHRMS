@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:new_hrms/admin/adminDashboard/screen/admindashboard.dart';
 
@@ -15,68 +15,82 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final FlutterSecureStorage _storage = FlutterSecureStorage();
   bool _isLoading = false;
 
- Future<void> loginUser() async {
-  setState(() {
-    _isLoading = true;
-  });
+  Future<void> loginUser() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-  String url = 'http://192.168.1.20:5500/api/auth/login';
-  Map<String, String> headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  };
-  Map<String, dynamic> body = {
-    'email': _emailController.text.trim(),
-    'password': _passwordController.text.trim(),
-  };
+    String url = 'http://192.168.1.13:5500/api/auth/login';
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+    Map<String, dynamic> body = {
+      'email': _emailController.text.trim(),
+      'password': _passwordController.text.trim(),
+    };
 
-  try {
-    final response = await http.post(
-      Uri.parse(url),
-      headers: headers,
-      body: jsonEncode(body),
-    );
-
-    final data = jsonDecode(response.body);
-
-    print("Response Code: ${response.statusCode}");
-    print("Response Body: ${response.body}");
-
-    if (response.statusCode == 200 && data.containsKey('token') && data['token'] != null) {
-      String token = data['token'].toString();
-
-      await _storage.write(key: 'auth_token', value: token);
-
-      print("Stored JWT Token: $token");
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+    try {
+      print("🔍 Sending login request to: $url");
+      print("📤 Request Body: ${jsonEncode(body)}");
+      
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(body),
       );
-    } else {
+
+       print("🔍 Full API Response: ${response.body}");
+
+      print("🔍 Response Code: ${response.statusCode}");
+      print("🔍 Response Body: ${response.body}");
+      
+      final data = jsonDecode(response.body);
+      
+      if (response.statusCode == 200 && data.containsKey('token') && data['token'] != null) {
+        String token = data['token'].toString();
+
+        // Debugging: Confirm token received
+        print("✅ Token Generated from API: $token");
+
+        // Store token in SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+        print("✅ Stored JWT Token: $token");
+
+        // Verify if the token is stored correctly
+        String? storedToken = prefs.getString('auth_token');
+        print("🛠️ Confirm Token Saved: $storedToken");
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        print("❌ Login failed: ${data['message'] ?? 'Unknown error'}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Login failed. Please try again.')),
+        );
+      }
+    } catch (e) {
       setState(() {
         _isLoading = false;
       });
+      print("❌ Error during login: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? 'Login failed. Please try again.')),
+        SnackBar(content: Text('Error: $e')),
       );
     }
-  } catch (e) {
-    setState(() {
-      _isLoading = false; 
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error: $e')),
-    );
   }
-}
 
 
   @override
@@ -90,9 +104,8 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-
               Image.network(
-                "https://www.pockethrms.com/wp-content/uploads/2022/01/Happy-Workforce.jpg", // ✅ Replace with actual image URL
+                "https://www.pockethrms.com/wp-content/uploads/2022/01/Happy-Workforce.jpg",
                 height: 150,
                 width: double.infinity,
                 fit: BoxFit.contain,
@@ -104,10 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                   return const Icon(Icons.error, color: Colors.red);
                 },
               ),
-
               const SizedBox(height: 20),
-
-              // Login Card
               Card(
                 color: const Color.fromARGB(255, 252, 253, 253),
                 shape: RoundedRectangleBorder(
@@ -127,14 +137,8 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.green,
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
-                      // Email Field
-                      const Text(
-                        "Email",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      const Text("Email", style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 5),
                       TextField(
                         controller: _emailController,
@@ -146,30 +150,20 @@ class _LoginPageState extends State<LoginPage> {
                               vertical: 12, horizontal: 10),
                         ),
                       ),
-
                       const SizedBox(height: 15),
-
-                      // Password Field 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            "Password",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          const Text("Password", style: TextStyle(fontWeight: FontWeight.bold)),
                           GestureDetector(
                             onTap: () {},
                             child: const Text(
                               "Forgot Password?",
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 5),
                       TextField(
                         controller: _passwordController,
@@ -182,14 +176,11 @@ class _LoginPageState extends State<LoginPage> {
                               vertical: 12, horizontal: 10),
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
-                      // Login Button
-                     SizedBox(
-                     width: double.infinity,
-                     height: 50,
-                     child: ElevatedButton(
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
                          onPressed: () {
                               Navigator.pushReplacement(
                               context,
@@ -204,59 +195,11 @@ class _LoginPageState extends State<LoginPage> {
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
                            ),
-                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-
-              const SizedBox(height: 30),
-
-              // Footer Section
-              Column(
-                children: [
-                  const Text(
-                    "Developed by Neophyte Team",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: SvgPicture.asset(
-                          "assets/github.svg",
-                          height: 30,
-                        ),
-                      ),
-
-                      IconButton(
-                        onPressed: () {
-                        },
-                        icon: SvgPicture.asset(
-                          "assets/linkedin.svg",
-                          height: 30,
-                        ),
-                      ),
-
-                      IconButton(
-                        onPressed: () {
-                        },
-                        icon: Image.network(
-                          "https://raw.githubusercontent.com/deepak-singh5219/Digital-Portfolio/main/public/favicon.ico", // ✅ Replace with actual DS logo URL
-                          height: 30,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -264,5 +207,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
-

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:new_hrms/admin/adminDashboard/widgets/admin_header.dart';
 import 'package:new_hrms/admin/adminDashboard/widgets/admindrawer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class LeadersScreen extends StatefulWidget {
   const LeadersScreen({super.key});
@@ -13,6 +15,7 @@ class LeadersScreen extends StatefulWidget {
 }
 
 class _LeadersScreenState extends State<LeadersScreen> {
+  final Type _storage = SharedPreferences;
   List<dynamic> _leaders = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -24,53 +27,60 @@ class _LeadersScreenState extends State<LeadersScreen> {
   }
 
 Future<void> _fetchLeaders() async {
-  try {
-    final token = await _storage.read(key: 'auth_token');
-    
-    const String apiUrl = "http://192.168.1.20:5500/api/admin/leaders";
-    print("🔍 Calling API: $apiUrl");
-    
-    final response = await http.get(
-      Uri.parse(apiUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',  // Add the token here
-      },
-    ).timeout(const Duration(seconds: 10));
-    
-    print("🔍 Response Status Code: ${response.statusCode}");
-    print("🔍 Response Body: ${response.body}");
-    
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-      if (responseBody['success'] == true && 
-          responseBody.containsKey('data') && 
-          responseBody['data'] is List) {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      print("🔍 Retrieved Token from SharedPreferences: $token");
+
+      if (token == null || token.isEmpty) {
+        print("🚨 No valid token found! Redirecting to login.");
+        return;
+      }
+
+      const String apiUrl = "http://192.168.1.13:5500/api/admin/leaders";
+      print("🔍 Calling API: $apiUrl");
+      
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NGNhMzM3Njg5M2FjOWY3MTllYTVjNGQiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInVzZXJuYW1lIjoiYWRtaW4iLCJ0eXBlIjoiYWRtaW4iLCJpYXQiOjE3NDEwNzc4NzksImV4cCI6MTc0MTA4MTQ3OX0.OPhWSXu-VoyPoPHUgyy6I36yOLXyL2pWApuhMRceOWQ',  // Add the token here
+        },
+      ).timeout(const Duration(seconds: 10));
+      
+      print("🔍 Response Status Code: ${response.statusCode}");
+      print("🔍 Response Body: ${response.body}");
+      
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        if (responseBody['success'] == true && 
+            responseBody.containsKey('data') && 
+            responseBody['data'] is List) {
+          setState(() {
+            _leaders = responseBody['data'];
+            _isLoading = false;
+          });
+        } else {
+          throw Exception("Invalid API response format");
+        }
+      } else if (response.statusCode == 401) {
         setState(() {
-          _leaders = responseBody['data'];
+          _errorMessage = "Authentication required. Please login again.";
           _isLoading = false;
         });
+        print("❌ Authentication Error: 401 Unauthorized");
       } else {
-        throw Exception("Invalid API response format");
+        throw Exception("API Error: ${response.statusCode} - ${response.reasonPhrase}");
       }
-    } else if (response.statusCode == 401) {
+    } catch (e) {
       setState(() {
-        _errorMessage = "Authentication required. Please login again.";
+        _errorMessage = "Network Error: Unable to fetch data. Please check your internet connection.";
         _isLoading = false;
       });
-      print("❌ Authentication Error: 401 Unauthorized");
-    } else {
-      throw Exception("API Error: ${response.statusCode} - ${response.reasonPhrase}");
+      print("❌ Network Error: $e");
     }
-  } catch (e) {
-    setState(() {
-      _errorMessage = "Network Error: Unable to fetch data. Please check your internet connection.";
-      _isLoading = false;
-    });
-    print("❌ Network Error: $e");
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -154,4 +164,8 @@ Future<void> _fetchLeaders() async {
       ),
     );
   }
+}
+
+extension on Type {
+  read({required String key}) {}
 }

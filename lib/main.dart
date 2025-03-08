@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:new_hrms/login/screens/loginPage.dart';
 
 void main() {
@@ -31,7 +31,7 @@ class AuthCheckScreen extends StatefulWidget {
 }
 
 class _AuthCheckScreenState extends State<AuthCheckScreen> {
-  final FlutterSecureStorage _storage = FlutterSecureStorage();
+  final Type _storage = SharedPreferences;
 
   Future<bool> isUserLoggedIn() async {
     String? token = await _storage.read(key: 'auth_token');
@@ -57,6 +57,10 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
       },
     );
   }
+}
+
+extension on Type {
+  read({required String key}) {}
 }
 
 /// **Temporary Screen for Logged-In Users**  
