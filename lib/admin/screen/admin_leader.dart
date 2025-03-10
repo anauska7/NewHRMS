@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:new_hrms/admin/adminDashboard/widgets/admin_header.dart';
-import 'package:new_hrms/admin/adminDashboard/widgets/admindrawer.dart';
+import 'package:new_hrms/admin/widgets/admin_header.dart';
+import 'package:new_hrms/admin/widgets/admindrawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 

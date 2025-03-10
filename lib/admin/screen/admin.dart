@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:new_hrms/admin/adminDashboard/widgets/admin_header.dart';
-import 'package:new_hrms/admin/adminDashboard/widgets/admindrawer.dart';
+import 'package:new_hrms/admin/widgets/admin_header.dart';
+import 'package:new_hrms/admin/widgets/admindrawer.dart';
 
 class AdminsScreen extends StatefulWidget {
   const AdminsScreen({super.key});

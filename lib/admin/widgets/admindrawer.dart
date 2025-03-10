@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admindashboard.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin_employee.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin_leader.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin_assignsalary.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin_leave.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin_attendance.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin_team.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin_adduser.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admin_addteam.dart';
+import 'package:new_hrms/admin/screen/admindashboard.dart';
+import 'package:new_hrms/admin/screen/admin_employee.dart';
+import 'package:new_hrms/admin/screen/admin_leader.dart';
+import 'package:new_hrms/admin/screen/admin.dart';
+import 'package:new_hrms/admin/screen/admin_assignsalary.dart';
+import 'package:new_hrms/admin/screen/admin_leave.dart';
+import 'package:new_hrms/admin/screen/admin_attendance.dart';
+import 'package:new_hrms/admin/screen/admin_team.dart';
+import 'package:new_hrms/admin/screen/admin_adduser.dart';
+import 'package:new_hrms/admin/screen/admin_addteam.dart';
 
 
 

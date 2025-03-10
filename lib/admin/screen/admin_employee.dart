@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:new_hrms/admin/adminDashboard/widgets/admin_header.dart';
-import 'package:new_hrms/admin/adminDashboard/widgets/admindrawer.dart';
-import 'package:new_hrms/admin/adminDashboard/models/employee_table.dart';
+import 'package:new_hrms/admin/widgets/admin_header.dart';
+import 'package:new_hrms/admin/widgets/admindrawer.dart';
 
 class EmployeesScreen extends StatefulWidget {
   const EmployeesScreen({super.key});
@@ -14,10 +13,10 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
   late Future<List<Map<String, String>>> _employeeData;
 
   @override
-  void initState() {
-    super.initState();
-    _employeeData = EmployeesApi.fetchEmployees(); 
-  }
+  // void initState() {
+  //   super.initState();
+  //   _employeeData = EmployeesApi.fetchEmployees(); 
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admindashboard.dart';
+//import 'package:new_hrms/admin/screen/admindashboard.dart';
+import 'package:new_hrms/employee/screen/employee_dashboard.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -70,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          MaterialPageRoute(builder: (context) =>  DashboardPage()),
         );
       } else {
         setState(() {
@@ -184,7 +185,7 @@ class _LoginPageState extends State<LoginPage> {
                          onPressed: () {
                               Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                              MaterialPageRoute(builder: (context) =>  DashboardPage()),
                                 );
                              },   
                        style: ElevatedButton.styleFrom(
