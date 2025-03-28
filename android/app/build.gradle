@@ -24,7 +24,7 @@ android {
         applicationId = "com.example.new_hrms"
 
         // Ensure `minSdkVersion` is at least 20 for `flutter_secure_storage`
-        minSdk = 20
+        minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -1,97 +1,163 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:new_hrms/admin/adminDashboard/screen/admindashboard.dart';
+import 'package:new_hrms/providers/auth_providers.dart'; // Import providers
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() {
+    return _LoginPageState();
+  }
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+
+  // Check if user is logged in using SharedPreferences
+  Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    return token != null && token.isNotEmpty;
+  }
+
+  // Get the user type (admin or employee) from SharedPreferences
+  Future<String?> getUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_type');
+  }
+
+  
 
   Future<void> loginUser() async {
     setState(() {
       _isLoading = true;
     });
 
-    String url = 'http://192.168.1.13:5500/api/auth/login';
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+
+    String url = 'https://neoe2e.neophyte.live/hrms-api/api/auth/login';
     Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
     Map<String, dynamic> body = {
-      'email': _emailController.text.trim(),
-      'password': _passwordController.text.trim(),
+      'email': email,
+      'password': password,
     };
 
     try {
-      print("🔍 Sending login request to: $url");
-      print("📤 Request Body: ${jsonEncode(body)}");
-      
+
+       print("🔍 [DEBUG] Sending login request to: $url");
+       print("🔍 [DEBUG] Request Body: ${jsonEncode(body)}");
+
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(body),
       );
 
-       print("🔍 Full API Response: ${response.body}");
+      print("🔍 [DEBUG] Response Code: ${response.statusCode}");
+      print("🔍 [DEBUG] Response Body: ${response.body}");
 
-      print("🔍 Response Code: ${response.statusCode}");
-      print("🔍 Response Body: ${response.body}");
-      
       final data = jsonDecode(response.body);
-      
-      if (response.statusCode == 200 && data.containsKey('token') && data['token'] != null) {
-        String token = data['token'].toString();
 
-        // Debugging: Confirm token received
-        print("✅ Token Generated from API: $token");
+      print("🔍 [DEBUG] Decoded Response: $data");
 
-        // Store token in SharedPreferences
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', token);
-        print("✅ Stored JWT Token: $token");
+      if (response.statusCode == 200 && data['success'] == true) {
+        var headers = response.headers;
+        String userName = '';
+        String userType = '';
 
-        // Verify if the token is stored correctly
-        String? storedToken = prefs.getString('auth_token');
-        print("🛠️ Confirm Token Saved: $storedToken");
+        // Safely access 'name' and 'type' properties from the response
+        if (data.containsKey('user') && data['user'] != null) {
+          userName = data['user']?['name'] ?? '';
+          userType = data['user']?['type'] ?? '';
+          String accessToken = '';
 
-        setState(() {
-          _isLoading = false;
-        });
+        }
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
+        if (headers.containsKey('set-cookie')) {
+          String cookieHeader = headers['set-cookie']!;
+
+          RegExp regex = RegExp(r'accessToken=([^;]+)');
+          Match? match = regex.firstMatch(cookieHeader);
+
+          if (match != null && match.groupCount >= 1) {
+            String accessToken = match.group(1)!;
+
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString('auth_token', accessToken);
+            await prefs.setString('user_name', userName);
+            //await prefs.setString('user_type', userType);
+            await prefs.setString('user_data', jsonEncode(data['user']));
+
+            final userData = data['user'];
+          await prefs.setString('user_id', userData['id'] ?? '');
+          await prefs.setString('user_name', userData['name'] ?? '');
+          await prefs.setString('user_email', userData['email'] ?? '');
+          await prefs.setString('user_username', userData['username'] ?? '');
+          await prefs.setString('user_mobile', userData['mobile'].toString());
+          await prefs.setString('user_image', userData['image'] ?? '');
+          await prefs.setString('user_type', userData['type'] ?? '');
+          await prefs.setString('user_address', userData['address'] ?? '');
+          await prefs.setString('user_status', userData['status'] ?? '');
+
+          String userType = userData['type'] ?? '';
+
+           ref.read(authProvider.notifier).state = true;
+          ref.read(userTypeProvider.notifier).state = userType;
+
+            setState(() {
+              _isLoading = false;
+            });
+
+            ref.read(authProvider.notifier).state = true;
+            ref.read(userTypeProvider.notifier).state = userType;
+
+            // Routing based on user type
+            if (userType == 'Admin') {
+              context.go('/admin/dashboard');
+            } else {
+              context.go('/employee/dashboard');
+            }
+          } else {
+            showErrorMessage("Login failed: Access Token not found in Cookie header.");
+          }
+        } else {
+          showErrorMessage("Login failed: No Cookie header found.");
+        }
       } else {
         setState(() {
           _isLoading = false;
         });
-        print("❌ Login failed: ${data['message'] ?? 'Unknown error'}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Login failed. Please try again.')),
-        );
+        showErrorMessage(data['message'] ?? 'Invalid credentials.');
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      print("❌ Error during login: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      showErrorMessage('Network Error: Please try again.');
     }
   }
 
+  void showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(milliseconds: 1500),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,20 +247,17 @@ class _LoginPageState extends State<LoginPage> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                         onPressed: () {
-                              Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                                );
-                             },   
-                       style: ElevatedButton.styleFrom(
-                       backgroundColor: Colors.green,
-                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                           ),
-                      child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
-                           ),
+                          onPressed: () async {
+                            await loginUser(); // Ensure loginUser() is called
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
+                        ),
                       ),
                     ],
                   ),
