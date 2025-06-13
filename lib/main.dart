@@ -21,6 +21,7 @@ import 'package:new_hrms/login/screens/loginPage.dart';
 import 'package:new_hrms/admin/pages/dashboard/dashboard_view.dart';
 import 'package:new_hrms/employee/pages/dashboard/dashboard_view.dart';
 import 'package:new_hrms/providers/auth_providers.dart'; // Import providers
+import 'package:awesome_notifications/awesome_notifications.dart';
 
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -170,7 +171,26 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-void main() {
+void main() async {
+  // Ensure widgets are initialized before running the app
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Awesome Notifications
+  await AwesomeNotifications().initialize(
+    null,
+    [
+      NotificationChannel(
+        channelKey: 'attendance_channel',
+        channelName: 'Attendance Notifications',
+        channelDescription: 'Notifications related to attendance',
+        defaultColor: const Color.fromARGB(255, 21, 116, 2),
+        importance: NotificationImportance.High,
+        channelShowBadge: true,
+      ),
+    ],
+    debug: true,
+  );
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
