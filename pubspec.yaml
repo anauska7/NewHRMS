@@ -50,6 +50,9 @@ dependencies:
   flutter_background_service_platform_interface: ^5.1.2
   flutter_background_service_ios: ^5.0.3
   awesome_notifications: ^0.10.0
+  camera: ^0.10.5+5
+  path_provider: ^2.1.1
+  path: ^1.8.3
 
 dev_dependencies:
   flutter_test:

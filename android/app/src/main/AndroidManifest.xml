@@ -1,23 +1,44 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Location permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> 
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>   
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    
+    <!-- Biometric permissions -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    
+    <!-- Network permission -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    
+    <!-- Storage permissions -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    
+    <!-- Background service permissions -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    
+    <!-- Notification permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
+    <!-- Camera permissions -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:enableOnBackInvokedCallback="true"
         android:label="new_hrms"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -29,33 +50,94 @@
             android:windowSoftInputMode="adjustResize">
 
             <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme"
-              />
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+                
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
+        <!-- Flutter Background Service - Override the exported attribute -->
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:foregroundServiceType="location"
+            android:exported="true"
+            tools:replace="android:exported" />
+
+        <!-- Your custom location service -->
+        <service
+            android:name=".LocationService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
+
+        <!-- Awesome Notifications Receivers -->
+        <receiver 
+            android:name="me.carda.awesome_notifications.core.receivers.NotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="NOTIFICATION_CREATED" />
+                <action android:name="NOTIFICATION_DISPLAYED" />
+                <action android:name="ACTION_RECEIVED" />
+                <action android:name="NOTIFICATION_DISMISSED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver 
+            android:name="me.carda.awesome_notifications.core.receivers.DismissedNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="NOTIFICATION_DISMISSED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver 
+            android:name="me.carda.awesome_notifications.core.receivers.ScheduledNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="SCHEDULED_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+
+        <receiver 
+            android:name="me.carda.awesome_notifications.core.receivers.KeepOnTopActionReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="ACTION_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Boot receiver for background service and notifications -->
+        <receiver 
+            android:name="me.carda.awesome_notifications.core.receivers.RefreshSchedulesReceiver"
+            android:exported="false">
+            <intent-filter android:priority="100">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="android.intent.action.ACTION_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.REBOOT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Flutter metadata -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <service
-            android:name=".LocationService"
-            android:foregroundServiceType="location"/>
-
-        <meta-data 
-            android:name="flutterBackgroundService" 
+        <meta-data
+            android:name="flutterBackgroundService"
             android:value="true"/>
-            
-        <receiver android:name="me.carda.awesome_notifications.notifications.receivers.AwesomeNotificationReceiver" android:exported="true"/>
+
     </application>
+
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+
 </manifest>

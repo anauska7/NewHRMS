@@ -7,7 +7,7 @@ buildscript {
     }
     dependencies {
         // Add the Android Gradle Plugin (AGP) classpath here
-        classpath 'com.android.tools.build:gradle:7.0.0' // Or another version that is compatible with your setup
+        classpath 'com.android.tools.build:gradle:7.3.0' // Or another version that is compatible with your setup
     }
 }
 

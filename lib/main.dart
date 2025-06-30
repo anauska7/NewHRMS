@@ -22,6 +22,9 @@ import 'package:new_hrms/admin/pages/dashboard/dashboard_view.dart';
 import 'package:new_hrms/employee/pages/dashboard/dashboard_view.dart';
 import 'package:new_hrms/providers/auth_providers.dart'; // Import providers
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter/foundation.dart';
+import 'package:camera/camera.dart';
+import 'package:new_hrms/employee/pages/attendance/camera_service.dart';
 
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -165,8 +168,6 @@ final routerProvider = Provider<GoRouter>((ref) {
          path: '/employee/comingsoon',
           builder: (context, state) => const ComingsoonPage(),
           ),
-
-
     ],
   );
 });
@@ -175,23 +176,135 @@ void main() async {
   // Ensure widgets are initialized before running the app
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Awesome Notifications
-  await AwesomeNotifications().initialize(
-    null,
-    [
-      NotificationChannel(
-        channelKey: 'attendance_channel',
-        channelName: 'Attendance Notifications',
-        channelDescription: 'Notifications related to attendance',
-        defaultColor: const Color.fromARGB(255, 21, 116, 2),
-        importance: NotificationImportance.High,
-        channelShowBadge: true,
-      ),
-    ],
-    debug: true,
-  );
+  // Initialize cameras at app startup (optional - can also do this when needed)
+  try {
+    await CameraService.initializeCameras();
+    print('Cameras initialized successfully');
+  } catch (e) {
+    print('Camera initialization failed: $e');
+    // App can still work without camera
+  }
+
+  // Initialize Awesome Notifications with complete setup
+  await initializeNotifications();
 
   runApp(const ProviderScope(child: MyApp()));
+}
+
+/// Initialize Awesome Notifications with complete configuration
+Future<void> initializeNotifications() async {
+  try {
+    // Initialize Awesome Notifications with multiple channels
+    bool initialized = await AwesomeNotifications().initialize(
+      null, // Use default app icon
+      [
+        // Attendance notifications channel
+        NotificationChannel(
+          channelKey: 'attendance_channel',
+          channelName: 'Attendance Notifications',
+          channelDescription: 'Notifications for attendance check-in and check-out',
+          defaultColor: const Color(0xFF9D50DD),
+          ledColor: Colors.white,
+          importance: NotificationImportance.High,
+          channelShowBadge: true,
+          onlyAlertOnce: false,
+          playSound: true,
+          criticalAlerts: false,
+        ),
+        // Basic notifications channel
+        NotificationChannel(
+          channelKey: 'basic_channel',
+          channelName: 'Basic Notifications',
+          channelDescription: 'General app notifications',
+          defaultColor: const Color(0xFF9D50DD),
+          ledColor: Colors.white,
+          importance: NotificationImportance.Default,
+          channelShowBadge: true,
+          onlyAlertOnce: false,
+          playSound: true,
+          criticalAlerts: false,
+        ),
+      ],
+      debug: kDebugMode, // Enable debug mode in development
+    );
+
+    if (initialized) {
+      // Request notification permissions
+      await requestNotificationPermissions();
+      
+      // Set up notification event listeners
+      AwesomeNotifications().setListeners(
+        onActionReceivedMethod: onActionReceivedMethod,
+        onNotificationCreatedMethod: onNotificationCreatedMethod,
+        onNotificationDisplayedMethod: onNotificationDisplayedMethod,
+        onDismissActionReceivedMethod: onDismissActionReceivedMethod,
+      );
+      
+      debugPrint('✅ Awesome Notifications initialized successfully');
+    } else {
+      debugPrint('❌ Failed to initialize Awesome Notifications');
+    }
+  } catch (e) {
+    debugPrint('❌ Error initializing Awesome Notifications: $e');
+  }
+}
+
+/// Request notification permissions
+Future<void> requestNotificationPermissions() async {
+  try {
+    bool isAllowed = await AwesomeNotifications().isNotificationAllowed();
+    if (!isAllowed) {
+      // Request permission
+      isAllowed = await AwesomeNotifications().requestPermissionToSendNotifications();
+      debugPrint('📱 Notification permissions ${isAllowed ? 'granted' : 'denied'}');
+    } else {
+      debugPrint('📱 Notification permissions already granted');
+    }
+  } catch (e) {
+    debugPrint('❌ Error requesting notification permissions: $e');
+  }
+}
+
+// Notification event handlers
+@pragma("vm:entry-point")
+Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
+  debugPrint('📱 Notification action received: ${receivedAction.actionType}');
+  
+  // Handle different action types
+  switch (receivedAction.actionType) {
+    case ActionType.Default:
+      // Handle default tap - could navigate to attendance page
+      debugPrint('📱 Default notification action received');
+      // You can add navigation logic here if needed
+      // For example: navigateToAttendancePage();
+      break;
+    case ActionType.SilentAction:
+      // Handle silent actions
+      debugPrint('📱 Silent action received');
+      break;
+    case ActionType.SilentBackgroundAction:
+      // Handle background actions
+      debugPrint('📱 Background action received');
+      break;
+    default:
+      debugPrint('📱 Unknown action type: ${receivedAction.actionType}');
+      break;
+  }
+}
+
+@pragma("vm:entry-point")
+Future<void> onNotificationCreatedMethod(ReceivedNotification receivedNotification) async {
+  debugPrint('📱 Notification created: ${receivedNotification.title}');
+}
+
+@pragma("vm:entry-point")
+Future<void> onNotificationDisplayedMethod(ReceivedNotification receivedNotification) async {
+  debugPrint('📱 Notification displayed: ${receivedNotification.title}');
+}
+
+@pragma("vm:entry-point")
+Future<void> onDismissActionReceivedMethod(ReceivedAction receivedAction) async {
+  debugPrint('📱 Notification dismissed: ${receivedAction.id}');
 }
 
 class MyApp extends ConsumerWidget {
