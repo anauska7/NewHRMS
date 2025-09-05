@@ -15,8 +15,8 @@ class AttendanceModel {
         throw Exception("Authentication required. Please login again.");
       }
 
-      const String attendanceApiUrl = "https://neoe2e.neophyte.live/hrms-api/api/admin/view-employee-attendance";
-      const String employeeApiUrl = "https://neoe2e.neophyte.live/hrms-api/api/admin/employees";
+      const String attendanceApiUrl = "https://192.168.1.5:5500/api/admin/view-employee-attendance";
+      const String employeeApiUrl = "https://192.168.1.5:5500/api/admin/employees";
 
       // Fetch Employees first to map employeeID to names
       final employeeResponse = await http.get(

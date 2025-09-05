@@ -44,7 +44,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
 
-    String url = 'https://neoe2e.neophyte.live/hrms-api/api/auth/login';
+    String url = 'https://192.168.1.5:5500/hrms-api/api/auth/login';
     Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json'

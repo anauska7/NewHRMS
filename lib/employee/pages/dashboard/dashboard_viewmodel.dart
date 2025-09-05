@@ -53,7 +53,7 @@ class DashboardViewModel extends StateNotifier<DashboardState> {
 
       // If not in prefs, fetch from API
       final response = await http.get(
-        Uri.parse('https://neoe2e.neophyte.live/hrms-api/api/user/profile'),
+        Uri.parse('https://192.168.1.5:5500/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
         },

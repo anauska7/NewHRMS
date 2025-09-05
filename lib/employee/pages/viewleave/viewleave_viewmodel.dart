@@ -61,7 +61,7 @@ class ViewLeave {
 class ViewLeaveModel {
   Future<List<ViewLeave>> fetchLeaveRecords(String token) async {
     const String apiUrl =
-        "https://neoe2e.neophyte.live/hrms-api/api/employee/view-leave-applications";
+        "https://192.168.1.5:5500/api/employee/view-leave-applications";
 
     // Debug: Log the token and API URL being used
     print('API URL: $apiUrl');

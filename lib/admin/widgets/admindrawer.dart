@@ -191,7 +191,7 @@ class CustomDrawer extends StatelessWidget {
 
     return DrawerUser(
       name: name ?? 'Admin',
-      imageUrl: imageUrl ?? 'https://neoe2e.neophyte.live/hrms-api/storage/images/profile/profile-1739164521363-6574707171000100896.jpg',
+      imageUrl: imageUrl ?? 'https://192.168.1.5:5500/storage/images/profile/profile-1739164521363-6574707171000100896.jpg',
     );
   }
 

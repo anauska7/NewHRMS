@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,22 +13,19 @@ import 'package:new_hrms/employee/widgets/employee_drawer.dart';
 import 'package:new_hrms/employee/widgets/employee_header.dart';
 
 class AttendancePage extends ConsumerStatefulWidget {
-  const AttendancePage({Key? key});
+  const AttendancePage({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<AttendancePage> createState() => _AttendancePageState();
+  ConsumerState createState() => _AttendancePageState();
 }
 
 class _AttendancePageState extends ConsumerState<AttendancePage> {
-  // Dropdown value holders
   String? selectedYear;
   String? selectedMonth;
   String? selectedDay;
-
   DateTime? _lastBackPressed;
   String? _capturedImagePath;
 
-  // Sample dropdown lists
   final List<String> years = ['2023', '2024', '2025'];
   final List<String> months = [
     'January', 'February', 'March', 'April',
@@ -42,7 +40,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     _initializeCamera();
   }
 
-  Future<void> _initializeCamera() async {
+  Future _initializeCamera() async {
     await CameraService.initializeCameras();
   }
 
@@ -51,7 +49,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     final attendanceState = ref.watch(attendanceViewModelProvider);
     double screenWidth = MediaQuery.of(context).size.width;
 
-    // Show error or success snackbar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (attendanceState.errorMessage.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -75,10 +72,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
       canPop: false,
       onPopInvoked: (didPop) {
         if (didPop) return;
-
         final DateTime now = DateTime.now();
-        
-        if (_lastBackPressed == null || 
+        if (_lastBackPressed == null ||
             now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -86,98 +81,93 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
               duration: Duration(seconds: 2),
             ),
           );
-          
           _lastBackPressed = now;
           return;
         }
-        
         if (now.difference(_lastBackPressed!) <= const Duration(seconds: 2)) {
           context.go('/employee/dashboard');
         }
       },
-
       child: Scaffold(
         appBar: const CustomHeader(title: "Attendance"),
-        drawer: CustomDrawer(selectedScreen: "Attendance", userName: '',),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Camera Section
-              _buildCameraSection(),
-              const SizedBox(height: 20),
-
-              // Check-In and Check-Out Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildAttendanceButton('Check-In', Colors.green, () async {
-                    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-                    if (!serviceEnabled) {
-                      _showLocationServiceAlert();
-                      return;
-                    }
-
-                    // Check in with captured photo if available
-                    ref.read(attendanceViewModelProvider.notifier).checkIn(
-                      imagePath: _capturedImagePath
-                    );
-                  }),
-                  const SizedBox(width: 10),
-                  _buildAttendanceButton('Check-Out', Colors.red, () async {
-                    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-                    if (!serviceEnabled) {
-                      _showLocationServiceAlert();
-                      return;
-                    }
-
-                    // Check out with captured photo if available
-                    ref.read(attendanceViewModelProvider.notifier).checkOut(
-                      imagePath: _capturedImagePath
-                    );
-                  }),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Filters - Vertical Layout
-              _buildDropdown('Year', years, (value) {
-                setState(() {
-                  selectedYear = value;
-                });
-                ref.read(attendanceViewModelProvider.notifier).setSelectedYear(value);
-              },screenWidth*0.8),
-              const SizedBox(height: 10),
-              _buildDropdown('Month', months, (value) {
-                setState(() {
-                  selectedMonth = value;
-                });
-                ref.read(attendanceViewModelProvider.notifier).setSelectedMonth(value);
-              },screenWidth*0.8),
-              const SizedBox(height: 10),
-              _buildDropdown('Day', days, (value) {
-                setState(() {
-                  selectedDay = value;
-                });
-                ref.read(attendanceViewModelProvider.notifier).setSelectedDay(value);
-              },screenWidth*0.8),
-              const SizedBox(height: 10),
-
-              // Search Button
-              Center(
-                child: ElevatedButton(
-                    onPressed: _performSearch, child: const Text("Search")),
-              ),
-              const SizedBox(height: 20),
-
-              // Loading indicator
-              if (attendanceState.isLoading)
-                const Center(child: CircularProgressIndicator()),
-
-              // Attendance table
-              _buildAttendanceTable(attendanceState.attendanceList),
-            ],
+        drawer: CustomDrawer(selectedScreen: "Attendance", userName: ''),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await ref.read(attendanceViewModelProvider.notifier).resetFiltersAndFetchAttendance();
+            setState(() {
+              selectedYear = null;
+              selectedMonth = null;
+              selectedDay = null;
+            });
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCameraSection(),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildAttendanceButton('Check-In', Colors.green, () async {
+                      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                      if (!serviceEnabled) {
+                        _showLocationServiceAlert();
+                        return;
+                      }
+                      ref.read(attendanceViewModelProvider.notifier).checkIn(
+                        imagePath: _capturedImagePath
+                      );
+                    }),
+                    const SizedBox(width: 10),
+                    _buildAttendanceButton('Check-Out', Colors.red, () async {
+                      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                      if (!serviceEnabled) {
+                        _showLocationServiceAlert();
+                        return;
+                      }
+                      ref.read(attendanceViewModelProvider.notifier).checkOut(
+                        imagePath: _capturedImagePath
+                      );
+                    }),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildDropdown('Year', years, (value) {
+                  setState(() {
+                    selectedYear = value;
+                  });
+                  ref.read(attendanceViewModelProvider.notifier).setSelectedYear(value);
+                }, screenWidth * 0.8),
+                const SizedBox(height: 10),
+                _buildDropdown('Month', months, (value) {
+                  setState(() {
+                    selectedMonth = value;
+                  });
+                  ref.read(attendanceViewModelProvider.notifier).setSelectedMonth(value);
+                }, screenWidth * 0.8),
+                const SizedBox(height: 10),
+                _buildDropdown('Day', days, (value) {
+                  setState(() {
+                    selectedDay = value;
+                  });
+                  ref.read(attendanceViewModelProvider.notifier).setSelectedDay(value);
+                }, screenWidth * 0.8),
+                const SizedBox(height: 10),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _performSearch,
+                    child: const Text("Search"),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (attendanceState.isLoading)
+                  const Center(child: CircularProgressIndicator()),
+                _buildAttendanceTable(attendanceState.attendanceList),
+              ],
+            ),
           ),
         ),
       ),
@@ -200,8 +190,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
               ),
             ),
             const SizedBox(height: 12),
-            
-            // Display captured image or placeholder
             Container(
               width: double.infinity,
               height: 200,
@@ -238,8 +226,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                     ),
             ),
             const SizedBox(height: 12),
-            
-            // Camera buttons
             Row(
               children: [
                 Expanded(
@@ -275,15 +261,12 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     );
   }
 
-  Future<void> _openCamera() async {
+  Future _openCamera() async {
     try {
-      // Check and request camera permission
       bool hasPermission = await _requestCameraPermission();
       if (!hasPermission) {
-        return; // Permission dialog already shown in _requestCameraPermission
+        return;
       }
-
-      // Navigate to camera screen
       await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => CameraScreen(
@@ -291,7 +274,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
               setState(() {
                 _capturedImagePath = imagePath;
               });
-              
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Photo captured successfully!'),
@@ -310,17 +292,12 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
 
   Future<bool> _requestCameraPermission() async {
     try {
-      // For Android/iOS, we'll use a simpler approach
-      // Try to initialize cameras directly
       await CameraService.initializeCameras();
-      
-      // Check if cameras are available after initialization
       final frontCamera = CameraService.getFrontCamera();
       if (frontCamera == null) {
         _showPermissionDialog();
         return false;
       }
-      
       return true;
     } catch (e) {
       debugPrint('Camera permission error: $e');
@@ -336,7 +313,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
         return AlertDialog(
           title: const Text('Camera Permission Required'),
           content: const Text('This app needs camera permission to take attendance photos. Please grant camera permission in your device settings.'),
-          actions: <Widget>[
+          actions: [
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
@@ -347,7 +324,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
               child: const Text('Open Settings'),
               onPressed: () {
                 Navigator.of(context).pop();
-                // Open app settings - you might need to add this functionality
                 _openAppSettings();
               },
             ),
@@ -358,8 +334,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
   }
 
   void _openAppSettings() {
-    // You can implement this using app_settings package or similar
-    // For now, just show a message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Please go to Settings > Apps > Your App > Permissions and enable Camera'),
@@ -372,7 +346,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     setState(() {
       _capturedImagePath = null;
     });
-    
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Photo cleared'),
@@ -388,7 +361,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
         return AlertDialog(
           title: const Text('Error'),
           content: Text(message),
-          actions: <Widget>[
+          actions: [
             TextButton(
               child: const Text('OK'),
               onPressed: () {
@@ -401,7 +374,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     );
   }
 
-  // Show alert when location services are disabled
   void _showLocationServiceAlert() {
     showDialog(
       context: context,
@@ -409,7 +381,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
         return AlertDialog(
           title: const Text('Location Services Disabled'),
           content: const Text('Please enable location services to check-in/check-out'),
-          actions: <Widget>[
+          actions: [
             TextButton(
               child: const Text('Open Settings'),
               onPressed: () {
@@ -437,33 +409,38 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
       ),
       onPressed: onPressed,
       child: Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontSize: 16)
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 16)
       ),
     );
   }
 
   Widget _buildDropdown(String label, List<String> items, Function(String?) onChanged, double dropdownWidth) {
+    String? value;
+    if (label == 'Year') value = selectedYear;
+    if (label == 'Month') value = selectedMonth;
+    if (label == 'Day') value = selectedDay;
     return Container(
       width: double.infinity,
-       padding: const EdgeInsets.only(left: 13.0, right: 20.0),
-       decoration: BoxDecoration(
+      padding: const EdgeInsets.only(left: 13.0, right: 20.0),
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey),
       ),
       child: DropdownButtonFormField<String>(
         decoration: InputDecoration(
-          labelText: label, 
+          labelText: label,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
         ),
         isExpanded: true,
+        value: value,
         items: items.map((String value) {
-          return DropdownMenuItem<String>(
+          return DropdownMenuItem(
             value: value,
             child: Container(
               width: dropdownWidth,
-               child: Text(value),
+              child: Text(value),
             ),
           );
         }).toList(),
@@ -485,7 +462,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
       ),
     );
@@ -497,85 +474,126 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(fontSize: 12),
         ),
       ),
     );
   }
 
-  Widget _buildAttendanceTable(List<Attendance>? attendanceList) {
+  Widget _buildAttendanceTable(List? attendanceList) {
     if (attendanceList == null || attendanceList.isEmpty) {
       return const Center(child: Text('No attendance records found.'));
     }
 
-    return Table(
-      border: TableBorder.all(),
-      columnWidths: const {
-        0: FlexColumnWidth(0.5),
-        1: FlexColumnWidth(1.2),
-        2: FlexColumnWidth(1.2),
-        3: FlexColumnWidth(1),
-        4: FlexColumnWidth(1.5),
-        5: FlexColumnWidth(1.5),
-      },
-      children: [
-        // Table Header Row
-        TableRow(
-          decoration: BoxDecoration(color: Colors.green[200]),
-          children: [
-            _buildTableHeaderCell("#"),
-            _buildTableHeaderCell("Date"),
-            _buildTableHeaderCell("Day"),
-            _buildTableHeaderCell("Status"),
-            _buildTableHeaderCell("Check-In Time"),
-            _buildTableHeaderCell("Check-Out Time"),
-          ],
-        ),
-        // Data Rows
-        for (int i = 0; i < attendanceList.length; i++)
+    List validRecords = attendanceList
+        .where((attendance) => attendance.isValidRecord)
+        .toList();
+    if (validRecords.isEmpty) {
+      return const Center(child: Text('No valid attendance records found.'));
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Table(
+        border: TableBorder.all(),
+        columnWidths: const {
+          0: FixedColumnWidth(40),
+          1: FixedColumnWidth(100),
+          2: FixedColumnWidth(70),
+          3: FixedColumnWidth(90),
+          4: FixedColumnWidth(90),
+          5: FixedColumnWidth(90),
+          6: FixedColumnWidth(90),
+          7: FixedColumnWidth(60),
+        },
+        children: [
           TableRow(
+            decoration: BoxDecoration(color: Colors.green[200]),
             children: [
-              _buildTableCell((i + 1).toString()),
-              _buildTableCell(attendanceList[i].formattedDate),
-              _buildTableCell(attendanceList[i].day),
-              _buildTableCell(_determineAttendanceStatus(attendanceList[i])),
-              _buildTableCell(_getCheckInTime(attendanceList[i])),
-              _buildTableCell(_getCheckOutTime(attendanceList[i])),
+              _buildTableHeaderCell("#"),
+              _buildTableHeaderCell("Date"),
+              _buildTableHeaderCell("Day"),
+              _buildTableHeaderCell("Status"),
+              _buildTableHeaderCell("First In"),
+              _buildTableHeaderCell("Last Out"),
+              _buildTableHeaderCell("Hours"),
+              _buildTableHeaderCell("In/Out"),
             ],
           ),
-      ],
+          for (int i = 0; i < validRecords.length; i++)
+            TableRow(
+              decoration: BoxDecoration(
+                color: _getRowColor(validRecords[i].calculatedAttendanceStatus),
+              ),
+              children: [
+                _buildTableCell((i + 1).toString()),
+                _buildTableCell(validRecords[i].formattedDate),
+                _buildTableCell(validRecords[i].day),
+                _buildStatusCell(validRecords[i].calculatedAttendanceStatus),
+                _buildTableCell(validRecords[i].formattedFirstCheckIn),
+                _buildTableCell(validRecords[i].formattedLatestCheckOut),
+                _buildTableCell(validRecords[i].formattedWorkingHours),
+                _buildTableCell(validRecords[i].checkInOutCount),
+              ],
+            ),
+        ],
+      ),
     );
   }
 
-  // Helper method to determine attendance status
-  String _determineAttendanceStatus(Attendance attendance) {
-    if (attendance.checkInTime.year == 1970 || 
-        attendance.checkOutTime == null || 
-        attendance.checkOutTime?.year == 1970) {
-      return "Absent";
+  Widget _buildStatusCell(String status) {
+    Color textColor;
+    Color backgroundColor;
+    switch (status) {
+      case "Present":
+        textColor = Colors.green[800]!;
+        backgroundColor = Colors.green[100]!;
+        break;
+      case "Half Day":
+        textColor = Colors.orange[800]!;
+        backgroundColor = Colors.orange[100]!;
+        break;
+      case "Absent":
+        textColor = Colors.red[800]!;
+        backgroundColor = Colors.red[100]!;
+        break;
+      default:
+        textColor = Colors.black;
+        backgroundColor = Colors.grey[100]!;
     }
-    return "Present";
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: textColor.withOpacity(0.3)),
+          ),
+          child: Text(
+            status,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
-  // Helper method to get check-in time
-  String _getCheckInTime(Attendance attendance) {
-    if (attendance.checkInTime.year == 1970) {
-      return "N/A";
+  Color? _getRowColor(String status) {
+    switch (status) {
+      case "Present":
+        return Colors.green[50];
+      case "Half Day":
+        return Colors.orange[50];
+      case "Absent":
+        return Colors.red[50];
+      default:
+        return null;
     }
-    return _convertToIST(attendance.checkInTime);
-  }
-
-  // Helper method to get check-out time
-  String _getCheckOutTime(Attendance attendance) {
-    if (attendance.checkOutTime == null || attendance.checkOutTime?.year == 1970) {
-      return "N/A";
-    }
-    return _convertToIST(attendance.checkOutTime!);
-  }
-
-  // Helper method to convert to IST
-  String _convertToIST(DateTime dateTime) {
-    DateTime istTime = dateTime.toUtc().add(const Duration(hours: 5, minutes: 30));
-    return DateFormat('hh:mm a').format(istTime);
   }
 }

@@ -15,7 +15,7 @@ class AdminModel {
         throw Exception("Authentication required. Please login again.");
       }
 
-      const String apiUrl = "https://neoe2e.neophyte.live/hrms-api/api/admin/admins";
+      const String apiUrl = "https://192.168.1.5:5500/api/admin/admins";
       print("🔍 [DEBUG] AdminModel: Calling API: $apiUrl");
 
       final response = await http.get(

@@ -57,10 +57,10 @@ class DashboardViewModel extends StateNotifier<DashboardState> {
 
     try {
       final List<String> apiUrls = [
-        "https://neoe2e.neophyte.live/hrms-api/api/admin/employees",
-        "https://neoe2e.neophyte.live/hrms-api/api/admin/leaders",
-        "https://neoe2e.neophyte.live/hrms-api/api/admin/admins",
-        "https://neoe2e.neophyte.live/hrms-api/api/admin/teams", 
+        "https://192.168.1.5:5500/api/admin/employees",
+        "https://192.168.1.5:5500/api/admin/leaders",
+        "https://192.168.1.5:5500/api/admin/admins",
+        "https://192.168.1.5:5500/api/admin/teams", 
       ];
 
       final List<Future<int>> fetchData = apiUrls.map((url) => _dashboardModel.fetchCount(url)).toList();

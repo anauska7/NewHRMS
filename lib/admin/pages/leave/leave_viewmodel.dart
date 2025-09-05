@@ -9,7 +9,7 @@ class LeaveModel {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('auth_token');
-      const String apiUrl = "https://neoe2e.neophyte.live/hrms-api/api/admin/employees";
+      const String apiUrl = "https://192.168.1.5:5500/api/admin/employees";
 
       final response = await http.get(
         Uri.parse(apiUrl),
@@ -46,8 +46,8 @@ class LeaveModel {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('auth_token');
-      const String leaveApiUrl = "https://neoe2e.neophyte.live/hrms-api/api/admin/view-leave-applications";
-      const String employeeApiUrl = "https://neoe2e.neophyte.live/hrms-api/api/admin/employees";
+      const String leaveApiUrl = "https://192.168.1.5:5500/api/admin/view-leave-applications";
+      const String employeeApiUrl = "https://192.168.1.5:5500/api/admin/employees";
 
       // Step 1: Fetch leave applications
       final leaveResponse = await http.post(

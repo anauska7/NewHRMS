@@ -16,7 +16,7 @@ class EmployeeModel {
         throw Exception("Authentication required. Please login again.");
       }
 
-      const String apiUrl = "https://neoe2e.neophyte.live/hrms-api/api/admin/employees";
+      const String apiUrl = "https://192.168.1.5:5500/api/admin/employees";
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {

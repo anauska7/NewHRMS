@@ -8,7 +8,7 @@ class TeamsModel {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('auth_token');
 
-      const String apiUrl = "https://neoe2e.neophyte.live/hrms-api/api/admin/teams"; // Example API endpoint
+      const String apiUrl = "https://192.168.1.5:5500/api/admin/teams"; // Example API endpoint
 
       final response = await http.get(
         Uri.parse(apiUrl),
